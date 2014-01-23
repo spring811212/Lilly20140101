@@ -1,0 +1,99 @@
+<apex:page id="SECTrialSiteContactRole"
+    standardController="Opportunity_Contact_Role__c"
+    extensions="SECTrialSiteContactRoleController"
+    tabStyle="Opportunity_Contact_Role__c"
+    >
+<apex:form id="theForm">
+    <apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/jquery.js') }" />
+    <script>
+        $(document).ready(function(){
+            $("table.list").find("input[type='radio']").each(function(){
+                if($(this).next().val() == 'true') $(this).attr('checked', 'true');
+            });
+        });
+        
+        function saveForm () {
+            
+            var pass = true;
+            $("table.list").find("input[class='ValidEmpty']").each(function(){
+                if(this.value==""){
+                    $(this).parent().next().attr("style","");
+                    pass = false;               
+                };
+                
+            });
+            if(pass) {
+                saveTrialContactRoles();
+            }
+        }
+        
+        function populatePrimary(component){
+            $(component).next().val('true');
+            $("table.list").find("input[type='radio']").each(function(){
+                if(component.id != this.id) $(this).next().val('false');
+            });         
+        }
+    </script>
+    <apex:pageMessages id="errors" escape="false" />
+    <apex:pageBlock title="Contact Roles for {!oppyName}" id="thePB">
+        <apex:pageBlockButtons location="Both">
+            <input type="button" class="btn" onclick="saveForm()" value="Save" />
+			<apex:commandButton action="{!gotoSelectContactAddress}" value="Add" id="theGotoButton"/>
+<!--             <apex:commandButton action="{!addTrialContactRoles}" value="Add" immediate="true" rerender="theForm" status="statusLoad"/> -->
+            <apex:commandButton action="{!cancelTrialContactRoles}" value="Cancel" id="theCancelButton" immediate="true"/>
+            
+            <apex:actionStatus startText=" Loading... " stopText="" id="statusLoad" >
+                <apex:facet name="start">
+                    <img class="deployingImg" src="/changemgmt/img/spinner24.gif" />
+                </apex:facet>
+            </apex:actionStatus>
+        </apex:pageBlockButtons>
+        <apex:pageBlockTable value="{!trialSiteContactRoles}" var="crs" id="PBTable">
+            
+            <apex:column headerValue="Delete" >
+                <a href="#" class="actionLink" title="Delete" onclick="if(confirm('The record will be deleted! Are you sure?')){DeleteTrialContactRoles('{!crs.index}');}" style="cursor:pointer;">Del</a>
+            </apex:column>
+            <apex:column headerValue="Primary" >
+                <input type="radio" name="primary" id="radio_{!crs.index}" onclick="populatePrimary(this);"/>
+                <apex:inputHidden value="{!crs.ocr.Primary__c}" />
+            </apex:column>
+            <apex:column headerValue="Contact" >
+            <div class="requiredInput">
+<!--                  <div class="requiredBlock"></div>             -->
+             
+                    <apex:outputField value="{!crs.ocr.ContactFake__c}" styleClass="ValidEmpty"/>              
+<!--                     <div class="errorMsg" style="display:none"><strong>Error:</strong> Contact can't be empty</div>                          -->
+            </div> 
+            </apex:column> 
+            <apex:column headerValue="Role" ><apex:inputField value="{!crs.ocr.Role__c}" /></apex:column>
+            <apex:column headerValue="Street" ><apex:inputField value="{!crs.ocr.Street__c}" /></apex:column>
+            <apex:column headerValue="City" ><apex:inputField value="{!crs.ocr.City__c}" /></apex:column>
+            <apex:column headerValue="State" ><apex:inputField value="{!crs.ocr.State_Province__c}" /></apex:column>
+            <apex:column headerValue="Zipcode" ><apex:inputField value="{!crs.ocr.Zip_PostalCode__c}" /></apex:column>
+            <apex:column headerValue="Country" ><apex:inputField value="{!crs.ocr.Country__c}" /></apex:column>
+            <apex:column headerValue="Email" ><apex:inputField value="{!crs.ocr.Email__c}" /></apex:column>
+            <apex:column headerValue="Email address for Safety Mailings"><apex:outputField rendered="{!IF(crs.ocr.Role__c=='Principal Investigator','true','false')}" value="{!crs.ocr.Contact__r.Additional_email_address__c}" /></apex:column>            
+        </apex:pageBlockTable>
+       
+            <apex:actionFunction name="DeleteTrialContactRoles" action="{!DeleteTrialContactRoles}" rerender="theForm" status="statusLoad" >
+                <apex:param assignTo="{!delIndex}" value="" name="delIndex" />
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="saveTrialContactRoles" action="{!saveTrialContactRoles}" rerender="theForm" status="statusLoad" >                
+            </apex:actionFunction>
+       
+    </apex:pageBlock>
+    
+    
+    <!-- 
+    <apex:sectionHeader title="Trial Site Contact Role:" subtitle="{!title}" rendered="{!!isError}" />
+    <apex:pageBlock title="Roles for Trial Site " mode="edit" id="theTrialSiteContactRolePageBlock" rendered="{!!isError}">
+        <apex:pageBlockButtons location="Both">
+            <apex:commandButton action="{!save}" value="Save" id="theSaveButton"/>
+            <apex:commandButton action="{!cancel}" value="Cancel" id="theCancelButton"/>
+        </apex:pageBlockButtons>
+        <apex:pageBlockSection columns="4" showHeader="true" rendered="{!isTrialSite}" >
+        </apex:pageBlockSection>
+    </apex:pageBlock> -->
+</apex:form>
+</apex:page>

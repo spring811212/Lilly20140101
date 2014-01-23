@@ -1,0 +1,18 @@
+<apex:page sidebar="false" showHeader="false" controller="SECFormStartPageController">
+<apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/jquery.js') }" />
+ <apex:iframe id="iFrameId"  frameborder="0"  src="SECFormStartEvaluation" height="600px"   width="100%" scrolling="true" />
+
+<script>
+    
+    document.getElementById("iFrameId").src="SECFormStartEvaluation" + location.search;
+    function resizeIframe(obj) {
+        obj.style.height = '100px';
+        obj.style.height = obj.contentWindow.document.body.scrollHeight + 'px';
+    }
+    $("#iFrameId").load(function() {
+        resizeIframe(this);
+    });
+           
+</script>
+
+</apex:page>

@@ -1,0 +1,7 @@
+<apex:page controller="CopyAnswersController" action="{!copy}">
+	<apex:form >
+		<apex:pageBlock title="Error" rendered="{!renderError}">
+			<apex:pageMessage summary="{!errorMsg}" severity="error" strength="3" />
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

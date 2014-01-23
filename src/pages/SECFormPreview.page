@@ -1,0 +1,209 @@
+<apex:page renderAs="pdf" controller="SECFormPreviewController" ApplyhtmlTag="false" ApplyBodyTag="false" showHeader="false" action="{!getCompleteForm}">
+<html>
+ <head>
+  <style type="text/css" media="print"> 
+     @page {
+            size: A4;
+            margin-left: 5mm;
+            margin-right: 5mm;
+            margin-top: 25mm;
+            margin-bottom: 25mm;
+            @top-left { 
+                content:"Investigator Site Evaluation Checklist and Selection Form (I-SEC)";
+            }
+            @bottom-left {
+                content:element(footer);
+                font-family: sans-serif;
+                font-size: 50%;
+            }
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+            }
+        }
+          div.footer {
+
+                                display: block;
+
+                             padding: 5px;
+
+                               position: running(footer);
+
+                      }
+                      
+        .templateStyle
+        {
+            border-collapse:collapse;
+            border: 1px solid black;
+        }
+        .fieldName {
+            font-weight:bold;
+        }
+        .page-break {
+            display:block;
+            page-break-after:always;
+        }
+        .titleText {
+            font-size:18pt;
+        }
+        .templateHeader {
+            font-size:15pt;
+            font-weight:bold;
+        }
+        .groupName {
+            font-weight:bold;
+            background: grey;
+        }
+        .questionText {
+            word-wrap: break-word; width: 50%
+        }
+        .answerText {
+            word-wrap: break-word; width: 50%
+        }
+        .seperator {
+            word-wrap: break-word; width: 50%;
+            height: 1px; 
+        }
+        .page-header {
+            padding-bottom: 9px;
+            margin: 20px 0 30px;
+            border-bottom: 1px solid;
+        }
+        table.gridtable {
+            font-size:12pt;
+            border-width: 0.5px;
+        }
+        table.gridtable th {
+            border-width: 0.5px;
+            padding: 8px;
+            border-style: solid;
+        }
+        table.gridtable td {
+            border-width: 0.5px;
+            padding: 8px;
+            border-style: solid;
+        }
+  </style>
+ </head>
+ <body>
+
+  <br/><br/><br/><br/><br/>
+  <div style="width:100%;text-align:center;">
+      <h4><apex:outputText value="MEDICAL QUALITY SYSTEM REQUIRED TOOL"/></h4>
+      <h1><apex:outputText value="Investigator Site Evaluation Checklist and Selection Form (I-SEC)"/></h1>
+  </div>
+  <br/><br/><br/><br/><br/><br/><br/><br/><br/>
+  <div style="width:100%;text-align:center;">
+      <h4><apex:outputText value="Trial Site Name: {!completeForm.formList[0].trialSiteName}"/></h4>
+      <h4><apex:outputText value="Trial Site Stage: {!trialSite.StageName}"/></h4>
+  </div>
+  <div class="page-break"></div>
+  
+   
+   <div class ="footer">
+   <div style="font-family:verdana; font-size:8pt">
+   {!completeForm.formList[0].pageFooter}</div>
+   </div>
+   
+   
+  <table style="width:100%" class="gridtable"  cellspacing="0">
+   
+    
+   <tr><td style="width:50%" >
+    <apex:outputText value="Lilly Representative"/></td><td>
+    <apex:outputText value="{!completeForm.formList[0].lillyRepresentative}"/>
+    </td></tr>
+    <tr><td>
+    <apex:outputText value="Compound"/></td><td>
+    <apex:outputText value="{!completeForm.formList[0].compound}"/>
+    </td></tr>
+    <tr><td>
+    <apex:outputText value="Trial Alias"/></td><td>
+    <apex:outputText value="{!completeForm.formList[0].trialAlias}"/>
+    </td></tr>
+    <tr><td>
+    <apex:outputText value="Site Name"/></td><td>
+    <apex:outputText value="{!completeForm.formList[0].siteName}"/>
+    </td></tr>
+    <apex:repeat value="{!completeForm.formList[0].opptyContactRoleList}" var="contactRole" id="theContactRoleRepeat">
+    <tr><td>
+        <apex:outputText value="{!contactRole.Role__c} - Name"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.Contact__r.Name}"/>
+    </td></tr>
+    
+    <tr><td>
+        <apex:outputText value="{!contactRole.Role__c} - Street"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.Street__c}"/>
+    </td></tr>
+    
+    <tr><td>
+        <apex:outputText value="{!contactRole.Role__c} - City"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.City__c}"/>
+    </td></tr>
+    
+    <tr><td>
+        <apex:outputText value="{!contactRole.Role__c} - State"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.State_Province__c}"/>
+    </td></tr>
+    
+    <tr><td>
+        <apex:outputText value="{!contactRole.Role__c} - Zip"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.Zip_PostalCode__c}"/>
+    </td></tr>
+    
+    <tr><td>
+        <apex:outputText value="{!contactRole.Role__c} - Country"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.Country__c}"/>
+    </td></tr>
+    </apex:repeat>
+  </table>
+  <div class="page-break"></div>
+      <apex:repeat value="{!completeForm.formList}" var="form" id="theFormRepeat">
+      
+        <div class="page-break"></div>
+        <div class ="footer">
+       <div style="font-family:verdana; font-size:8pt">
+   {!form.pageFooter}</div>
+   </div>
+          <hr />
+          <div style="width:100%;text-align:center;">
+              <h3><apex:outputText value="SEC Subform Label: {!form.label}"/></h3>
+          </div> 
+          <div style="width:100%;text-align:left;">
+              <h4><apex:outputText value="SEC Subform Purpose: {!form.purpose}"/></h4>
+              <h4><apex:outputText value="SEC Subform Instructions: {!form.instructions}"/></h4>
+          </div>
+          <hr />
+                <apex:repeat value="{!form.templateList}" var="template" id="theTemplateRepeat">
+                    <div class="page-header">
+                        <apex:outputText value="{!template.label}" styleClass="templateHeader"></apex:outputText>
+                    </div> 
+                    
+                    <table width="100%" class="gridtable" cellspacing="0">
+                        <apex:repeat value="{!template.groupList}" var="group" id="theGroupRepeat">
+                        
+                            <tr><td colspan='2' class='groupName'>
+                                <apex:outputText value="{!group.groupName}" style="font-weight:bold; background: grey;" escape="false" rendered="{!group.groupName!=template.label}" ></apex:outputText>
+                            </td></tr>
+                            
+                            <apex:repeat value="{!group.questionList}" var="question" id="theQuestionRepeat"> 
+                            <tr><td class="questionText">
+                                    <apex:outputText value="{!question.questionText}" styleClass="questionText" Rendered="{!question.questionText!='Seperator'}"></apex:outputText>
+                            </td><td class="answerText">
+                                    <apex:outputText value="{!question.answer}" styleClass="answerText" Rendered="{!question.questionText!='Seperator'}"></apex:outputText>
+                            </td></tr>
+                            </apex:repeat>
+                        </apex:repeat>
+                    
+                    </table>
+                </apex:repeat>
+        </apex:repeat>    
+  
+ </body>
+</html>
+</apex:page>

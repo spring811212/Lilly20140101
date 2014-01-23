@@ -1,0 +1,15 @@
+<apex:page controller="FormViewController" action="{!init}">
+	<apex:outputPanel rendered="{!showFlash}">
+		<apex:flash src="{!$Resource.swf_placeholder_dev}" width="100%"
+			height="700" loop="false" play="true"
+			flashvars="account_id={!acctId}&opportunity_id={!opptyId}&opportunity_form_id={!oid}&trial_campaign_id={!cmpgnId}&session_id={!sessionId}&server_url={!$Api.Partner_Server_URL_180}"></apex:flash>
+	</apex:outputPanel>
+	<apex:outputPanel rendered="{!NOT(showFlash)}">
+		<br />
+		<br />
+    We're sorry, an error has occurred. Please contact your system administrator.
+    <br />
+		<br />
+		<a href="/{!opptyId}">Return</a> to Opportunity.
+</apex:outputPanel>
+</apex:page>

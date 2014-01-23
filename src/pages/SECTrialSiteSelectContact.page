@@ -1,0 +1,52 @@
+<apex:page standardController="Opportunity_Contact_Role__c"
+    extensions="SECTrialSiteContactRoleController"
+    tabStyle="Opportunity_Contact_Role__c"
+    action="{!initContactAddress}">
+    <apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/jquery.js') }" />
+     <script type="text/javascript">
+         $(document).ready(function(){
+		   $(".theTextInput").keypress(function(event){
+		   
+		     if (window.event && window.event.keyCode == 13 || ev.which == 13) {
+		     	$(".fscSearchBtn").click();
+		     	return false;
+		     }
+		   });
+		 });
+    </script>
+    <style>
+	   .theTextInput {
+		}
+	   .fscSearchBtn {
+		}
+	</style>
+	    
+    <apex:pageMessages id="errors" escape="false" />
+<apex:form id="theForm">
+    <apex:pageBlock title="Select Contact for {!oppyName}" id="thePB">
+        <apex:pageBlockButtons location="Both">
+            <apex:commandButton action="{!selectContactAddress}" accessKey="" value="Select" id="theSelectButton"/>
+            <apex:commandButton action="{!cancelSelectContactAddress}" accessKey="" value="Cancel" id="theCancelButton" immediate="true"/>
+        </apex:pageBlockButtons>
+        
+        <apex:InputText value="{!searchCriteria}" styleClass="theTextInput" id="theSearchText"/>
+        <apex:commandButton action="{!searchContactAddress}" styleClass="fscSearchBtn" value="Search" id="theSearchButton"/>
+        
+        <apex:pageBlockTable value="{!contactAddrList}" var="ca" id="PBTable">
+            <apex:column headerValue="Select" >
+                <apex:inputCheckbox value="{!ca.isSelect}"/>
+            </apex:column>
+            <apex:column headerValue="Contact" ><apex:outputText value="{!ca.contactName}" /></apex:column>
+            <apex:column headerValue="Street" ><apex:outputText value="{!ca.street}" /></apex:column>
+            <apex:column headerValue="City" ><apex:outputText value="{!ca.city}" /></apex:column>
+            <apex:column headerValue="State" ><apex:outputText value="{!ca.state}" /></apex:column>
+            <apex:column headerValue="Zipcode" ><apex:outputText value="{!ca.zipCode}" /></apex:column>
+            <apex:column headerValue="Country" ><apex:outputText value="{!ca.country}" /></apex:column>
+            <apex:column headerValue="Email" ><apex:outputText value="{!ca.email}" /></apex:column>
+            <apex:column headerValue="Email address for Safety Mailings"><apex:outputText value="{!ca.additionalEmail}" /></apex:column>    
+      </apex:pageBlockTable>
+       
+    </apex:pageBlock>
+
+</apex:form>
+</apex:page>

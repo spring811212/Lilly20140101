@@ -1,0 +1,179 @@
+<apex:page renderAs="pdf" controller="SECFormPDFController" ApplyhtmlTag="false" ApplyBodyTag="false" showHeader="false" action="{!getOpptyForm}">
+<html>
+ <head>
+  <style> 
+     @page {
+            size: A4;
+            margin-left: 5mm;
+            margin-right: 5mm;
+            margin-top: 25mm;
+            margin-bottom: 25mm;
+            @top-left {
+                content: "{!opptyForm.pageHeader}";
+            }
+            @bottom-left {
+                content: "{!opptyForm.pagefooter}";
+            }
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+            }
+        }
+
+        .templateStyle
+        {
+            border-collapse:collapse;
+            border: 1px solid black;
+        }
+        .fieldName {
+            font-weight:bold;
+        }
+        .page-break {
+            display:block;
+            page-break-after:always;
+        }
+        .titleText {
+            font-size:18pt;
+        }
+        .templateHeader {
+            font-size:15pt;
+            font-weight:bold;
+        }
+        .groupName {
+            font-weight:bold;
+            background: grey;
+        }
+        .questionText {
+            word-wrap: break-word; width: 50%
+        }
+        .answerText {
+            word-wrap: break-word; width: 50%
+        }
+        .seperator {
+            word-wrap: break-word; width: 50%;
+            height: 1px; 
+        }
+        .page-header {
+            padding-bottom: 9px;
+            margin: 20px 0 30px;
+            border-bottom: 1px solid;
+        }
+        table.gridtable {
+            font-size:12pt;
+            border-width: 0.5px;
+            page-break-inside:avoid;
+        }
+        table.gridtable th {
+            border-width: 0.5px;
+            padding: 8px;
+            border-style: solid;
+        }
+        table.gridtable td {
+            border-width: 0.5px;
+            padding: 8px;
+            border-style: solid;
+        }
+  </style>
+ </head>
+ <body>
+  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+  <div style="width:100%;text-align:center;"><h1><apex:outputText value="{!opptyForm.label}" styleClass="titleText"/></h1></div>
+  <br/>
+  <div style="width:100%;text-align:center;"><h3><apex:outputText value="{!opptyForm.trialSiteName}"/></h3></div>
+  <div style="width:100%;text-align:center;"><h3><apex:outputText value="{!opptyForm.status}" /></h3></div>
+  <div class="page-break"></div>
+  <table style="width:100%" class="gridtable"  cellspacing="0">
+    <tr><td style="width:50%" >
+    <apex:outputText value="Lilly Representative"/></td><td>
+    <apex:outputText value="{!opptyForm.lillyRepresentative}"/>
+    </td></tr>
+    <tr><td>
+    <apex:outputText value="Compound"/></td><td>
+    <apex:outputText value="{!opptyForm.compound}"/>
+    </td></tr>
+    <tr><td>
+    <apex:outputText value="Trial Alias"/></td><td>
+    <apex:outputText value="{!opptyForm.trialAlias}"/>
+    </td></tr>
+    <tr><td>
+    <apex:outputText value="Site Name"/></td><td>
+    <apex:outputText value="{!opptyForm.siteName}"/>
+    </td></tr>
+    <apex:repeat value="{!opptyForm.opptyContactRoleList}" var="contactRole" id="theContactRoleRepeat">
+    <tr><td>
+        <apex:outputText value="{!contactRole.Role__c} - Name"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.Contact__r.Name}"/>
+    </td></tr>
+    
+    <tr><td>
+        <apex:outputText value="{!contactRole.Role__c} - Street"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.Street__c}"/>
+    </td></tr>
+    
+    <tr><td>
+        <apex:outputText value="{!contactRole.Role__c} - City"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.City__c}"/>
+    </td></tr>
+    
+    <tr><td>
+        <apex:outputText value="{!contactRole.Role__c} - State"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.State_Province__c}"/>
+    </td></tr>
+    
+    <tr><td>
+        <apex:outputText value="{!contactRole.Role__c} - Zip"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.Zip_PostalCode__c}"/>
+    </td></tr>
+    
+    <tr><td>
+        <apex:outputText value="{!contactRole.Role__c} - Country"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.Country__c}"/>
+    </td></tr>
+    <!--
+    <tr><td>
+        <apex:outputText value="{!contactRole.role__c} - Phone"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.Phone__c}"/>
+    </td></tr>
+    
+    <tr><td>
+        <apex:outputText value="{!contactRole.role__c} - Email"/>
+    </td><td>
+        <apex:outputText value="{!contactRole.Email__c}"/>
+    </td></tr>
+    -->
+    </apex:repeat>
+  </table>
+  <div class="page-break"></div>
+  
+  <apex:repeat value="{!opptyForm.templateList}" var="template" id="theTemplateRepeat">
+    <div class="page-break"></div>
+        <div class="page-header">
+            <apex:outputText value="{!template.label}" styleClass="templateHeader"></apex:outputText>
+        </div>
+        <table width="100%" class="gridtable" cellspacing="0">
+        <apex:repeat value="{!template.groupList}" var="group" id="theGroupRepeat">
+            
+                <tr><td colspan='2' class='groupName'>
+                    <apex:outputText value="{!group.groupName}" style="font-weight:bold; background: grey;" escape="false" rendered="{!group.groupName!=template.label}" ></apex:outputText>
+                </td></tr>
+                <apex:repeat value="{!group.questionList}" var="question" id="theQuestionRepeat"> 
+                <tr><td class="questionText">
+                        <apex:outputText value="{!question.questionText}" styleClass="questionText" Rendered="{!question.questionText!='Seperator'}"></apex:outputText>
+                </td><td class="answerText">
+                        <apex:outputText value="{!question.answer}" styleClass="answerText" Rendered="{!question.questionText!='Seperator'}"></apex:outputText>
+                </td></tr>
+                </apex:repeat>
+            
+        </apex:repeat>
+        </table>
+  </apex:repeat>    
+  
+ </body>
+</html>
+</apex:page>

@@ -1,0 +1,1313 @@
+<apex:page showHeader="false" standardStylesheets="false" applyHtmlTag="false" controller="SECFormDemographicsController">
+<html>
+    <head>
+        <title>SEC</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
+        <!-- Bootstrap -->
+         <apex:stylesheet value="{!URLFOR($Resource.SECForm, 'css/bootstrap.min.css')}" />
+         <apex:stylesheet value="{!URLFOR($Resource.SECForm, 'css/font-awesome.min.css')}" />
+         <apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/jquery.js') }" />
+         <apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/bootstrap.js') }" />
+          <apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/doT.min.js') }" />
+          <apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/bootbox.min.js') }" />
+          <script src="/soap/ajax/15.0/connection.js" type="text/javascript"></script>
+           <script src="/soap/ajax/15.0/apex.js" type="text/javascript"></script>
+            <script>
+            //call salesforce webservice
+      
+            sforce.Transport = function(url) {
+                this.url = url;
+                this.connection = null;
+
+                this.newConnection = function() {
+                    try {
+                        this.connection = new ActiveXObject('Msxml2.XMLHTTP');
+                    } catch(e) {
+                        try {
+                            this.connection = new ActiveXObject('Microsoft.XMLHTTP');
+                        } catch(e) {
+                            this.connection = new XMLHttpRequest();
+                        }
+                    }
+
+                    return this.connection;
+                };
+
+                this.send = function(envelope, callback, async, timeout) {
+                    this.newConnection();
+                    if (async) {
+                        this.connection.onreadystatechange = this.httpConnectionCallback;
+                    }
+                    var holder = new sforce.internal.ConnectionHolder(this.connection, callback);
+                    sforce.internal._connections.push(holder);
+                    this.connection.open("POST", this.url, async);
+                    this.connection.setRequestHeader("Content-Type", "text/xml; charset=UTF-8");
+                    this.connection.setRequestHeader("SOAPAction", "\"\"");
+                    this.connection.setRequestHeader("Accept", "text/xml");
+                    //   this.connection.setRequestHeader("User-Agent", "SFAJAX 1.0");
+                    this.connection.send(envelope);
+                    if (async && typeof (timeout) !== "undefined") {
+                        this.setTimeoutOn(holder, timeout);
+                    }
+                    if (!async) {
+                        this.httpConnectionCallback();
+                    }
+                };
+
+                this.setTimeoutOn = function(holder, timeout) {
+                    function abortConnection() {
+                        if (holder.connection.readyState !== 4) {
+                            holder.timedout = true;
+                            holder.connection.abort();
+                        }
+                    }
+
+                    setTimeout(abortConnection, timeout);
+                };
+
+                this.httpConnectionCallback = function() {
+
+                    for (var i = 0; i < sforce.internal._connections.length; i++) {
+                        var holder = sforce.internal._connections[i];
+                        if (holder !== null) {
+                            if (holder.timedout) {
+                                sforce.internal._connections[i] = null;
+                                sforce.internal._connections.slice(i, 1);
+                                holder.callback.httpCallback("Remote invocation timed out", false);
+                            } else if (holder.connection.readyState == 4) {
+                                sforce.internal._connections[i] = null;
+                                sforce.internal._connections.slice(i, 1);
+                                var success = holder.connection.status == 200;
+                                if (sforce.debug.trace) {
+                                    sforce.debug.log("Response : status - " + holder.connection.status);
+                                    sforce.debug.logXml(holder.connection.responseText);
+                                }
+                                if (sforce.debug.apexTrace) {
+                                    sforce.debug.logApex(holder.connection.responseText);
+                                }
+                                if (holder.connection.responseXML && holder.connection.responseXML.documentElement) {
+                                    holder.callback.httpCallback(holder.connection.responseXML.documentElement, success);
+                                } else {
+                                    holder.callback.httpCallback("Remote invocation failed, due to: " + holder.connection.responseText + " status code: ", holder.connection.status);
+                                }
+                            }
+                        }
+                    }
+                };
+            };
+        </script>
+        <style>
+            .div1 {
+                -moz-box-shadow: 1px 1px 5px #909090;
+                -webkit-box-shadow: 1px 1px 5px #909090;
+                box-shadow: 1px 1px 5px #909090;
+            }
+            i {
+                cursor: pointer;
+            }
+            body .modal {
+                /* new custom width */
+                width: 750px; 
+               
+                
+                /* must be half of the width, minus scrollbar on the left (30px) */
+                margin-left: -375px;
+               
+            }
+ 
+            .popover {
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 1010;
+                display: none;
+                max-width: 600px;
+                padding: 1px;
+                text-align: left;
+                white-space: normal;
+                background-color: #ffffff;
+                border: 1px solid #ccc;
+                border: 1px solid rgba(0, 0, 0, 0.2);
+                -webkit-border-radius: 6px;
+                -moz-border-radius: 6px;
+                border-radius: 6px;
+                -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+                -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+                box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+                -webkit-background-clip: padding-box;
+                -moz-background-clip: padding;
+                background-clip: padding-box;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class="container-fluid" style="padding: 0px;margin-bottom: 100px;width: 100%;padding-top: 10px;">
+            <div   id="page_main">
+                <div class="container-fluid" id="page_top">
+                    <div class="row-fluid div1" style="background-color: rgb(240,240,240);padding-top:10px;">
+                        <div class="span12">
+                            <div class="span3"  style="text-align: left;padding-left: 4px;">
+                                I-SEC/Demographics
+                            </div>
+
+                            <div class="span3" >
+
+                                <div class="progress">
+                                    <div class="bar"  id="bar_done"></div>
+
+                                </div>
+
+                            </div>
+
+                            <div class="span6">
+                                <div style="text-align: right;margin-right: 10px;">
+
+                                    <a class="btn btn btn-success "  ><i class="icon-arrow-right" onclick="next()">&nbsp; &nbsp; Next Section</i></a>
+                                    <a class="btn "   data-toggle="popover" data-placement="bottom"  id="btn_menu" title="" data-original-title="" data-content="dadsadsa"><i class="icon-list">&nbsp;&nbsp;Table Of Contents </i></a>
+
+                                    <a class="btn  "   data-toggle="popover" data-placement="bottom"  id="btn_options" title="" data-original-title="" data-content="dadsadsa"><i class="icon-cogs">&nbsp;&nbsp;Options</i></a>
+                                    <a class="btn btn btn-danger  "  ><i class="icon-remove" onclick="exit();">&nbsp;&nbsp;Exit</i></a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+                <!-- / -->
+                <div style="text-align:center;font-size:16px;color:red;width:100%;margin-top:20px; display:none;"   id="readyonlytips">
+                    “ReadOnly Mode !”
+                </div>
+
+                <div class=" container-fluid">
+                    <div class="row-fluid" >
+                        <div class="span12 div1" style="background-color: rgb(240,240,240);margin-top: 20px;padding:10px;">
+                            <h4> Site Information </h4>
+                            <br />
+                            <div class="row-fluid">
+                                <div class="span6">
+                                    <div class="form-inline">
+
+                                        <label class="control-label" for="txt_lillyRepresentative" style="width: 160px;">Lilly Representative:&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;</label>
+                                        <input type="text" id="txt_lillyRepresentative" class="uneditable-input"  disabled="disabled" >
+                                        </input>
+
+                                    </div>
+                                </div>
+                                <div class="span6">
+                                    <div class="form-inline">
+
+                                        <label class="control-label" for="txt_compound" style="width: 160px;">Compound:&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;</label>
+                                        <input type="text" id="txt_compound" class="uneditable-input"  disabled="disabled">
+                                        </input>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row-fluid" style="margin-top: 50px;margin-bottom: 20px;">
+                                <div class="span6">
+                                    <div class="form-inline">
+
+                                        <label class="control-label" for="txt_trailAlias" style="width: 160px;">Trail Alias:&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;</label>
+                                        <input type="text" id="txt_trailAlias" class="uneditable-input"  disabled="disabled">
+                                        </input>
+
+                                    </div>
+                                </div>
+                                <div class="span6">
+                                    <div class="form-inline">
+
+                                        <label class="control-label" for="txt_siteName" style="width: 160px;">Site Name:&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;</label>
+                                        <input type="text" id="txt_siteName" class="uneditable-input"  disabled="disabled">
+                                        </input>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- / -->
+
+                <div class="container-fluid" id='roles'>
+
+                    <!-- / -->
+
+                </div>
+
+                <!-- /container -->
+
+                <div  id="table_sections" style="display: none;">
+                    <table class="table table-striped table-bordered" style="margin: 0px;padding: 0px;">
+ 
+                        <tbody id="tbody_sections">
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <div  id="table_options" style="display: none;">
+                    <table class="table table-striped table-bordered" style="margin: 0px;padding: 0px;">
+
+                        <tbody>
+
+                            <tr  class="info">
+
+                                <td><a class="btn btn-link .btn-large" onclick="toExportPDFPage();" ><i class="icon-file-alt">&nbsp;&nbsp;Export Form as PDF</i></a></td>
+
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Modal -->
+                <div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row-fluid">
+                                <div class="span12">
+                                    <div class="tabbable" id="tabs-924351">
+                                        <ul class="nav nav-tabs">
+                                            <li class="active">
+                                                <a data-toggle="tab" href="#panel-55074">Select Existing Contact</a>
+                                            </li>
+
+                                        </ul>
+                                        <div class="tab-content">
+                                            <div class="tab-pane active" id="panel-55074">
+                                                <div class="input-append">
+                                                    <input class="span6" id="txt_searchcontact" type="text" >
+                                                    </input>
+                                                    <div class="btn-group">
+
+                                                        <button class="btn" type="button" style="margin-left: 20px;" onclick="searchContact();" id="btn_searchContact">
+                                                            Go
+                                                        </button>
+                                                        <a class="btn btn-info" type="button" style="margin-left: 10px;"  onclick="toCreateNewContactPage();"> Create New Contact </a>
+                                                    </div>
+
+                                                </div>
+
+                                                <table class="table" id="table_contacts" >
+                                                    <thead>
+                                                        <tr>
+                                                            <th></th>
+                                                            <th> Name </th>
+                                                            <th> Address </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="tbody_contacts">
+
+                                                    </tbody>
+                                                </table>
+
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn" href="#" onclick='refreshAllContacts();'><i class="icon-repeat"></i> Reload All</a>
+                        <button class="btn" data-dismiss="modal" aria-hidden="true">
+                            Close
+                        </button>
+                        <button class="btn btn-primary"  onclick='saveSelectedContacts();'>
+                            OK
+                        </button>
+                    </div>
+                </div>
+
+                <div id="modal_edit_address" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                    <input type='hidden' id='contactId' >
+                    </input>
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            ×
+                        </button>
+                        <h3 id='edit_address_title'>Edit Contact Address at Trial Site</h3>
+                    </div>
+                    <div class="modal-body">
+                        <h4 id='edit_address_name_role'></h4>
+
+                        <form class="form-horizontal">
+
+                            <div class="control-group">
+                                <label class="control-label" for="edit_all_address">Please Select Address</label>
+                                <div class="controls" id="edit_all_address">
+                                    <select id="select_all_address"></select>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label" for="inputStreet">Street</label>
+                                <div class="controls">
+                                    <input type="text" id="inputStreet">
+                                    </input>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label" for="inputCity">City</label>
+                                <div class="controls">
+                                    <input type="text" id="inputCity">
+                                    </input>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label" for="inputState">State</label>
+                                <div class="controls">
+                                    <input type="text" id="inputState">
+                                    </input>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label" for="inputPostalCode">Postal Code</label>
+                                <div class="controls">
+                                    <input type="text" id="inputPostalCode">
+                                    </input>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label" for="inputCountry">Country</label>
+                                <div class="controls">
+                                    <input type="text" id="inputCountry" value=''>
+                                    </input>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label" for="inputPhone">Phone</label>
+                                <div class="controls">
+                                    <input type="text" id="inputPhone">
+                                    </input>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label" for="inputFax">Fax</label>
+                                <div class="controls">
+                                    <input type="text" id="inputFax">
+                                    </input>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label" for="inputEmail">Email</label>
+                                <div class="controls">
+                                    <input type="text" id="inputEmail">
+                                    </input>
+                                </div>
+                            </div>
+                            
+                             <div class="control-group" id="additionalEmail" >
+                                <label class="control-label" for="inputAdditionalEmail">Safty Email</label>
+                                <div class="controls">
+                                    <input type="text" id="inputAdditionalEmail" class="uneditable-input"  disabled="disabled">
+                                    </input>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label" for="inputTherapeuticArea">Therapeutic Area</label>
+                                <div class="controls">
+                                    <input type="text" id="inputTherapeuticArea" class="uneditable-input"  disabled="disabled">
+                                    </input>
+                                </div>
+                            </div>
+                            
+                           
+
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn" data-dismiss="modal" aria-hidden="true" onclick='closeSelectedContactAddress();'>
+                            Cancel
+                        </button>
+                        <a class="btn btn-primary" style='display:none;' href="#" id='btn_modal_synchronize'><i class="icon-refresh icon-spin"></i> Synchronizing...</a>
+                        <button class="btn btn-primary"  onclick='saveSelectedContactAddress();' id='btn_modal_save'>
+                            OK
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript">
+            //define properties
+            var searchedContactList = new Array(), allSections = new Array();
+            var allSelectedContactsInRoleSection = new Array();
+            var allRoles;
+            var necessaryRoleCount = 14; 
+            var $modalEditAddress, $modalContactList;
+            var oid = '', trialSiteId, trialSiteName;
+            var createNewSite = true;
+            var roleId, roleName;
+            var currentTemplateId;
+            var canEdit;
+            /*role object*/
+            function Role(roleId, roleName, selectedContacts) {
+                this.roleId = roleId;
+                this.roleName = roleName;
+                this.selectedContacts = selectedContacts;
+            }
+
+            /**
+             * set default data to input fileds
+             * if create new site, all editable fileds will be empty.
+             */
+            function initContactAddress(contactId) {
+           
+                var contact = findContactById(contactId);
+                
+                var roleName;
+                //render html string to role section
+                 for (var i = 0; i < allRoles.length; i++) {
+
+                        if (allRoles[i].Id == roleId) {
+                           roleName= allRoles[i].label;
+                        }
+                  }
+                        
+                
+
+                if (createNewSite) {// create new site
+                    $modalEditAddress.find('#additionalEmail').hide();
+                    $("#edit_address_name_role").html("");
+                    $modalEditAddress.find('#edit_address_title').html('Edit Contact Address at Trial Site');
+                } else {
+                    //edit selected site
+                   
+                     if (roleName == 'Principal Investigator') {
+                          $modalEditAddress.find('#additionalEmail').show();
+                          $modalEditAddress.find('#inputAdditionalEmail').val(contact.additionalEmail); 
+                     }else{
+                          $modalEditAddress.find('#additionalEmail').hide();
+                     }
+                 
+                    $("#edit_address_name_role").html(contact.name);
+                    $modalEditAddress.find('#edit_address_title').html('Edit Trial Site Contact');
+
+                }
+                // call webservice
+               
+                var result = sforce.apex.execute("SECFormDemographics", "getContactAddress", {
+                    contactId : contact.Id,
+                    SECFormOpptyFormId : oid
+                });
+                //format  result object  to json object
+                result = JSON.parse(result);
+                var html = "";
+                //initialize existing addresses
+                var roleName2=getRoleNameById(roleId);
+                for (var i = 0; i < result.length; i++) {
+                    var selected="";
+                    if(createNewSite ){
+                        if(result[i].displayName.split(':')[1] == ' Mailing Address'){
+                             selected="selected";
+                        }
+                    }else{
+                        if(roleName2 ==   result[i].displayName.split(':')[0]){
+                            selected="selected";
+                        }
+                    }
+                    html += "<option  "+selected+"  value=\'" + result[i].displayName + "\'>" + result[i].displayName + "</option>"
+                }
+                $("#select_all_address").html(html);
+                //bind on change event
+                $('#select_all_address').change(function() {
+                    var select = $(this).children('option:selected').val();//get selected address type
+                    for (var i = 0; i < result.length; i++) {
+                        if (select == result[i].displayName) {
+                            //reassignment
+                            $modalEditAddress.find('#inputCountry').val(result[i].country);
+                            $modalEditAddress.find('#inputState').val(result[i].state);
+                            $modalEditAddress.find('#inputCity').val(result[i].city);
+                            $modalEditAddress.find('#inputStreet').val(result[i].street);
+                            $modalEditAddress.find('#inputPostalCode').val(result[i].postalCode);
+                            $modalEditAddress.find('#inputEmail').val(result[i].email);
+                            $modalEditAddress.find('#inputPhone').val(result[i].phone);
+                            $modalEditAddress.find('#inputFax').val(result[i].fax);
+
+                        }
+                    }
+
+                });
+
+                //assign data to input elements
+                $("#edit_address_name_role").html(contact.name + "&nbsp;&nbsp;(" + roleName2 + ")");
+                $modalEditAddress.find('input[type="text"]').val("");
+                $modalEditAddress.find('#contactId').val(contact.trialSiteContactRoleId);
+                $modalEditAddress.find('#inputCountry').val(contact.mailingCountry);
+                $modalEditAddress.find('#inputState').val(contact.mailingState);
+                $modalEditAddress.find('#inputCity').val(contact.mailingCity);
+                $modalEditAddress.find('#inputStreet').val(contact.mailingStreet);
+                $modalEditAddress.find('#inputPostalCode').val(contact.mailingPostalCode);
+                $modalEditAddress.find('#inputTherapeuticArea').val(contact.therapeuticArea);
+                $modalEditAddress.find('#inputEmail').val(contact.email);
+                $modalEditAddress.find('#inputPhone').val(contact.phone);
+                $modalEditAddress.find('#inputFax').val(contact.fax);
+                $modalEditAddress.find('#inputAdditionalEmail').val(contact.additionalEmail); 
+                $modalEditAddress.modal('show');
+            }
+
+            /**
+             * insert current selected contact to database
+             */
+            function saveSelectedContacts() {
+                $modalContactList.modal('hide');
+                //choice selected row
+                $('input[name="contact_in_modal"]:checked').each(function() {
+                    $modalContactList.modal('hide');
+                    createNewSite = true;
+                  
+                    addContactFromSearchResult($(this).attr('contactId'));
+                    initContactAddress($(this).attr('contactId'));
+
+                });
+
+            }
+
+            /*
+             * search contact in front-end environment by contact id
+             * return contact object or null
+             */
+            function findContactById(contactId) {
+                for (var i = 0; i < allSelectedContactsInRoleSection.length; i++) {
+                    var contact = allSelectedContactsInRoleSection[i];
+                    if (contact.trialSiteContactRoleId == contactId) {
+                        return contact;
+                    }
+                }
+
+            }
+
+            /*
+             * add new contact to front-end cache data
+             *
+             */
+            function addContactFromSearchResult(contactNewId) {
+                //if already contains this contact
+                for (var i = 0; i < allSelectedContactsInRoleSection.length; i++) {
+                    var contact = allSelectedContactsInRoleSection[i];
+                    if (contact.trialSiteContactRoleId == contactNewId) {
+                        return;
+                    }
+                }
+                //not contains this contact
+                for (var i = 0; i < searchedContactList.length; i++) {
+                    var contact = searchedContactList[i];
+                    if (contact.trialSiteContactRoleId == contactNewId) {
+                        allSelectedContactsInRoleSection.push(contact);
+                        return;
+                    }
+                }
+            }
+
+            /*
+             * update contact to front-end cache environment
+             */
+            function updateContact(contactNew) {
+                for (var i = 0; i < allSelectedContactsInRoleSection.length; i++) {
+                    var contact = allSelectedContactsInRoleSection[i];
+                    if (contact.trialSiteContactRoleId == contactNew.Id) {
+                        //replace old object by new one
+                        allSelectedContactsInRoleSection.splice(i, 1, contactNew);
+                        return;
+                    }
+                }
+            }
+            
+            function closeSelectedContactAddress() {
+                if (createNewSite) {
+                    $modalContactList.modal('show');
+                }
+            }
+
+            /**
+             * insert or update existing contact to server-side
+             */
+            function saveSelectedContactAddress() {
+                $modalEditAddress.find('#btn_modal_save').hide();
+                $modalEditAddress.find('#btn_modal_synchronize').show();
+                //delay to operate
+                window.setTimeout(function() {
+                    sforce.connection.sessionId = "{!$Api.Session_ID}";
+
+                    // assemble contact by the value of input field
+                    var contact = findContactById($modalEditAddress.find('#contactId').val());
+                    contact.mailingCountry = $modalEditAddress.find('#inputCountry').val();
+                    contact.mailingState = $modalEditAddress.find('#inputState').val();
+                    contact.mailingCity = $modalEditAddress.find('#inputCity').val();
+                    contact.mailingStreet = $modalEditAddress.find('#inputStreet').val();
+                    contact.mailingPostalCode = $modalEditAddress.find('#inputPostalCode').val();
+                    contact.email = $modalEditAddress.find('#inputEmail').val();
+                    contact.phone = $modalEditAddress.find('#inputPhone').val();
+                    contact.fax = $modalEditAddress.find('#inputFax').val();
+
+                  
+                    //get selected address type
+                   var  addressOption=  $("#select_all_address").val();
+                  
+                   if(addressOption=='Contact: Mailing Address'){
+                       addressOption='MailingAddress';
+                   }else if(addressOption=='Contact: Other Address'){
+                        addressOption='OtherAddress';
+                   }else{
+                       addressOption='NewAddress';
+                   }
+                  
+                    //call webservice
+                    var result;
+                    
+                  
+                    if (createNewSite) {
+                       result = sforce.apex.execute("SECFormDemographics","insertExistingContacts", {
+                           SECFormOpptyFormId : oid,
+                           addressOption: addressOption,
+                           contactId : contact.Id,
+                           trialSiteId : trialSiteId,
+                           roleId : roleId,
+                           country : contact.mailingCountry,
+                           state : contact.mailingState,
+                           city : contact.mailingCity,
+                           street : contact.mailingStreet,
+                           postalCode : contact.mailingPostalCode,
+                           phone : contact.phone,
+                           fax : contact.fax,
+                           email : contact.email
+
+                       });
+                      
+                    }else{
+                       result = sforce.apex.execute("SECFormDemographics","updateExistingContacts", {
+                           SECFormOpptyFormId : oid,
+                           addressOption: addressOption,
+                           trialSiteContactRoleId: contact.trialSiteContactRoleId,
+                           contactId : contact.Id,
+                           trialSiteId : trialSiteId,
+                           roleId : roleId,
+                           country : contact.mailingCountry,
+                           state : contact.mailingState,
+                           city : contact.mailingCity,
+                           street : contact.mailingStreet,
+                           postalCode : contact.mailingPostalCode,
+                           phone : contact.phone,
+                           fax : contact.fax,
+                           email : contact.email
+
+                       });
+                    }
+                    
+                     
+
+                    result = JSON.parse(result);
+
+                    //if return success
+                    if (result.Success == '0') {
+                        bootbox.alert(result.Msg);
+                    } else {
+                        updateContact(contact);
+                        renderContactToRoleSection(roleId, contact);
+                    }
+
+                    $modalEditAddress.modal('hide');
+                    $modalEditAddress.find('#btn_modal_save').show();
+                    $modalEditAddress.find('#btn_modal_synchronize').hide();
+                }, 1000)
+            }
+
+            /**
+             * get role name from webservice 
+             */
+            function getRoleNameById(roleId) {
+
+                for (var i = 0; i < allRoles.length; i++) {
+
+                    if (allRoles[i].Id == roleId) {
+                        return allRoles[i].label;
+                    }
+                }
+            }
+
+            /*
+             * add contacts to selected role section
+             * if roleId > getMandatoryRoleListSize.Size(), then render to optional role section
+             */
+            function renderContactToRoleSection(roleId, contact) {
+
+               
+               
+                if (roleId > necessaryRoleCount) {
+                    //optional roles
+                    var roleName = getRoleNameById(roleId);
+                    //assemble html string
+                    var contactNewAddress = contact.mailingStreet + " " + contact.mailingCity + " " + contact.mailingState + " " + contact.mailingCountry;
+                    var html = $('#tbody_role_optional').html();
+                    html += '<tr contactid=\"' + contact.trialSiteContactRoleId + '\" roleId=\"' + roleId + '\">';
+                    html += '<td id="roleName">' + roleName + '</td>';
+                    html += '<td id="name">' + contact.name + '</td>';
+                    html += '<td id="address">' + contactNewAddress + '</td>';
+                    html += '<td style="text-align: center;width:100px;"><i class="icon-pencil"   onclick=\'editContactAddress(\"' + contact.trialSiteContactRoleId + '\",\"' + roleId + '\")\'></i> &nbsp;&nbsp;&nbsp;<i class="icon-remove"  onclick=\'deleteContact(\"' + contact.trialSiteContactRoleId + '\",\"' + roleId + '\")\'  ></i></td>';
+                    html += '</tr>';
+                    //render
+                    if (createNewSite) {
+                        $('#tbody_role_optional').html(html);
+                        resizeIframe();
+                    }
+                    $('tr[contactid=\"' + contact.trialSiteContactRoleId + '\"][roleId=\"'+roleId+'\"]').find("#name").html(contact.name);
+                    $('tr[contactid=\"' + contact.trialSiteContactRoleId + '\"][roleId=\"'+roleId+'\"]').find("#address").html(contactNewAddress);
+
+                } else {
+                    //necessary roles
+                    //assemble html string
+                     var roleName;
+                    //render html string to role section
+                    for (var i = 0; i < allRoles.length; i++) {
+
+                        if (allRoles[i].Id == roleId) {
+                           roleName= allRoles[i].label;
+                        }
+                    }
+                    
+                    var contactNewAddress = contact.mailingStreet + " " + contact.mailingCity + " " + contact.mailingState + " " + contact.mailingCountry;
+                    var html = "";
+                    html += '<tr contactid=\"' + contact.trialSiteContactRoleId + '\">';
+                    html += '<td id="name">' + contact.name + '</td>';
+                    
+                    html += '<td id="address">' + contactNewAddress + '</td>';
+                  
+                    html += '<td style="text-align: center;width:100px;"><i class="icon-pencil"   onclick=\'editContactAddress(\"' + contact.trialSiteContactRoleId + '\",\"' + roleId + '\")\'></i> &nbsp;&nbsp;&nbsp;<i class="icon-remove"  onclick=\'deleteContact(\"' + contact.trialSiteContactRoleId + '\",\"' + roleId + '\")\'  ></i></td>';
+                    html += '</tr>';
+                 
+                    
+                    
+                    if (roleName == 'Principal Investigator') {
+                   // $('#tbody_role_' + roleId).before(contact.additionalEmail);
+                        $('#tbody_role_' + roleId).html(html);
+                    } else {
+                        if (createNewSite) {
+                            $('#tbody_role_' + roleId).append(html);
+                            resizeIframe();
+                        }
+                        $('#tbody_role_' + roleId).find('tr[contactid=\"' + contact.trialSiteContactRoleId + '\"]').find("#name").html(contact.name);
+                        $('#tbody_role_' + roleId).find('tr[contactid=\"' + contact.trialSiteContactRoleId + '\"]').find("#address").html(contactNewAddress);
+
+                    }
+                    
+                   
+                }
+                
+            }
+
+            /*
+             * get trial site id from server-side
+             */
+            function getTrialSiteId() {
+                var result = sforce.apex.execute("SECFormDemographics", "getTrialSiteId", {
+                    SECFormOpptyFormId : oid
+                });
+
+                trialSiteId = JSON.parse(result).trialSitedId;
+
+            }
+
+            /**
+             * go to create new contact page
+             */
+            function toCreateNewContactPage() {
+                window.open('SECCustomNewContact?oid=' + oid + "&siteName=" + trialSiteName);
+            }
+
+            /**
+             * edit existing contact data
+             */
+            function editContactAddress(contactId, id) {
+                createNewSite = false;
+                roleId = id;
+                initContactAddress(contactId);
+
+            }
+
+            //delete contact in front-end cache
+            function deleteContact(contactId, id) {
+
+                parent.window.scrollTo(0, 0);
+                var contact=findContactById(contactId);
+                //scroll to top
+                bootbox.confirm("Are you sure?", function(result) {
+                    if (result == true) {//delete
+                        var result = sforce.apex.execute("SECFormDemographics", "deleteExistingContacts", {
+                            SECFormOpptyFormId : oid,
+                            contactId : contact.Id,
+                            roleId : id,
+                            trialSiteId : trialSiteId
+                        });
+                        result = JSON.parse(result);
+                        roleId = id;
+                        
+                          var roleName;
+                    //render html string to role section
+                    for (var i = 0; i < allRoles.length; i++) {
+
+                        if (allRoles[i].Id == id) {
+                           roleName= allRoles[i].label;
+                        }
+                    }
+                    
+                    
+                    if (roleName == 'Principal Investigator') {
+                
+                            //clear
+                            $('#tbody_role_1').html('');
+                        } else {
+                            if (roleId > necessaryRoleCount) {
+                                //optional roles
+                                $('#tbody_role_optional').find('tr[contactid=\"' + contactId + '\"][roleId=\"' + id + '\"]').remove();
+                            } else {
+                                //necessary roles
+                                $('#tbody_role_' + roleId).find('tr[contactid=\"' + contactId + '\"]').remove();
+                            }
+                        }
+                    }
+                });
+
+            }
+
+            /*
+             * open a modal view
+             * to choose other contacts for every role section
+             */
+            function showContactsModal(investigatorRole) {
+                if (investigatorRole == "optional") {
+                    investigatorRole = $("#optional_role").val();
+                }
+                roleId = investigatorRole;
+
+                searchedContactList = new Array();
+ 
+                var result = sforce.apex.execute("SECFormDemographics", "getCurrentTrialContacts", {
+                    SECFormOpptyFormId : oid,
+                    roleId : roleId
+                });
+                var strs = JSON.parse(result[0]);
+                //assemble html string
+
+                var html = "";
+                for (var i = 0; i < strs.length; i++) {
+                    var contact = strs[i];
+                  
+                    searchedContactList.push(contact);
+                     var contactAddress = contact.mailingStreet + " " + contact.mailingCity + " " + contact.mailingState + " " + contact.mailingCountry;
+               
+                         html += "<tr><td> <input type='radio' contactId='" + contact.trialSiteContactRoleId + "'  name='contact_in_modal' contactName='" + contact.name + "'  contactAddress='" + contactAddress + "'></input></td><td>" + contact.name + "</td><td>" + contactAddress + "</td></tr>";
+
+                }
+                //render html elements to contact section
+                  $('#tbody_contacts').html(html);
+                  
+              $modalContactList.modal('show');
+   
+
+            }
+
+            /*
+             * get current trail site name from server-side
+             */
+            function getTrialSiteName() {
+                var result = sforce.apex.execute("SECFormDemographics", "getSiteInfo", {
+                    SECFormOpptyFormId : oid
+                });
+                result = JSON.parse(result);
+                $('#txt_siteName').val(result.siteName);
+                $('#txt_lillyRepresentative').val(result.lillyRepresentative);
+                $('#txt_compound').val(result.compound);
+                $('#txt_trailAlias').val(result.trialAlias);
+            }
+
+            /*
+             * search all contact in current trail site
+             */
+            function searchContact() {
+                searchedContactList = new Array();
+                var result = sforce.apex.execute("SECFormDemographics", "searchContact", {
+                    searchText : $('#txt_searchcontact').val(),
+                     SECFormOpptyFormId : oid,
+                     roleId: roleId
+                });
+                result = JSON.parse(result);
+                var html = "";
+                for (var i = 0; i < result.length; i++) {
+                    var contact = result[i];
+                    searchedContactList.push(contact);
+                    var contactAddress = contact.mailingCountry + ' ' + contact.mailingState + ' ' + contact.mailingCity + ' ' + contact.mailingStreet;
+                    html += "<tr><td> <input type='radio' contactId='" + contact.trialSiteContactRoleId + "'  name='contact_in_modal' contactName='" + contact.name + "'  contactAddress='" + contactAddress + "'></input></td><td>" + contact.name + "</td><td>" + contactAddress + "</td></tr>";
+
+                }
+                $('#tbody_contacts').html(html);
+
+            }
+
+            function refreshAllContacts() {
+                showContactsModal(roleId);
+            }
+
+            /*
+             * initialize necessary contacts
+             */
+            function initNecessaryRoleSections() {
+                allSelectedContactsInRoleSection = new Array();
+                allRoles = new Array();
+                var result = sforce.apex.execute("SECFormDemographics", "getRoleObjectList", {
+                    SECFormOpptyFormId : oid
+                });
+
+                result = JSON.parse(result);
+           
+                necessaryRoleCount = result.length;
+                for (var i = 0; i < result.length / 2; i++) {
+                    //left side
+                    var j = i * 2;
+                    var roleContact = result[j];
+                    
+                    allRoles.push(roleContact);
+                    var roleId = roleContact.Id;
+                    var roleName = roleContact.label;
+                    var selectedContact = roleContact.initContacts;
+                    var html = "";
+                    html += '   <div class="row-fluid"> ' + ' <div class="span12">' + ' <div class="row-fluid" style="margin-top: 40px;">' + '     <div class="div1 span6" style="background-color: rgb(240,240,240);padding: 10px;">' + ' <h4> ' + roleName + '</h4>' + ' <br />' + ' <table class="table table-striped ">' + ' <tbody id="tbody_role_' + roleId + '">' + '</tbody>' + '    </table>' + ' <a  href="#roles" class="btn" onclick="showContactsModal(\'' + roleId + '\')"  ><i class="icon-plus" >Add</i></a>' + '  </div>';
+                    var nextRoleContact;
+                    var nextRoleId = "";
+                    var nextSelectedContacts;
+                    if (j + 1 < result.length) {
+                        //right side
+                        nextRoleContact = result[j + 1];
+                        allRoles.push(nextRoleContact);
+                        nextRoleId = nextRoleContact.Id;
+                        var nextRoleName = nextRoleContact.label;
+                        nextSelectedContacts = nextRoleContact.initContacts;
+                        html += '<div class="div1 span6" style="background-color: rgb(240,240,240);padding: 10px;">' + ' <h4> ' + nextRoleName + '  </h4>' + ' <br />' + '<table class="table table-striped " >' + '<tbody id="tbody_role_' + nextRoleId + '">' + '</tbody>' + '   </table>' + '<a class="btn" href="#"  onclick="showContactsModal(\'' + nextRoleId + '\')"><i class="icon-plus" >Add</i></a>' + '</div>'
+                    }
+
+                    html += ' </div>' + '</div>' + '</div>';
+                    $('#roles').append(html);
+                    for (var k = 0; k < selectedContact.length; k++) {
+                        //left side
+                        renderContactToRoleSection(roleId, selectedContact[k]);
+                        allSelectedContactsInRoleSection.push(selectedContact[k]);
+                    }
+
+                    if (j + 1 < result.length) {
+                        for (var k = 0; k < nextSelectedContacts.length; k++) {
+                            //right side
+                            renderContactToRoleSection(nextRoleId, nextSelectedContacts[k]);
+                            allSelectedContactsInRoleSection.push(nextSelectedContacts[k]);
+                        }
+ 
+                    }
+                }
+
+            }
+
+            /**
+             * get table content form
+             */
+            function getTableOfContents() {
+                var result = sforce.apex.execute("SECFormDemographics", "getTableOfContents", {
+                    SECFormOpptyFormId : oid
+                });
+                result = JSON.parse(result);
+                var html = "";
+                allSections = new Array();
+                var index = 0;
+                // default display  'Demographics' row
+                if (result[0].Id == "1") {
+                    html += '<tr class="info">' + '<td style="vertical-align:center;"><i class="icon-hand-right"></i></td><td  style=" text-align:left;"><a >1.Demographics&nbsp;&nbsp;</a></td>' + '</tr>';
+                    allSections.push(result[0]);
+                    var doneCount = 0;
+                    if (result[0].status == 'Completed') {
+                        doneCount += 1;
+                    }
+                    index = 1;
+                }
+                //other rows
+                for (var i = index; i < result.length; i++) {
+                    var section = result[i];
+                    allSections.push(section);
+                    var id = section.Id;
+                    var status;
+                    if (section.status == 'Completed') {
+                        doneCount += 1;
+                        status = 'icon-ok';
+                    } else {
+                        status = 'icon-warning-sign';
+                    }
+                    var label = section.label;
+                    html += '<tr class="warning">' + '<td style="vertical-align:left;"><i class=\"' + status + '\"></i></td><td  style="vertical-align:left; text-align:left;"><a style="cursor:pointer;" onclick="toTemplatePage(\'' + id + '\',\'' + label + '\');">' + (i + 1) + '.' + label + '&nbsp;&nbsp;</a></td>' + '</tr>';
+
+                }
+
+                var width = Math.floor(100 * doneCount / result.length) + "%";
+                $('#bar_done').html(width).attr('style', 'width:' + width);
+                $('#tbody_sections').html(html);
+            }
+
+            // go to selected template page
+            function toTemplatePage(sectionId, sectionName) {
+
+                if (sectionId == 1) {
+                    window.location.href = "SECFormDemographics?oid=" + oid;
+                } else {
+                      
+                    //render html string to role section
+                    for (var i = 0; i < allRoles.length; i++) {
+                       
+                        if (allRoles[i].label == 'Principal Investigator') {
+                            if($('#tbody_role_'+allRoles[i].Id+" tr").length >0) {
+                              window.location.href = "SECFormTemplate?sectionId=" + sectionId + "&oid=" + oid + "&sectionName=" + sectionName;
+                            } else {
+                                bootbox.alert('Please add a principal investigator');
+                              
+                            }
+                            return;
+                        }
+                    }
+                    
+                    
+                   
+                
+                   
+                       
+                }
+            }
+
+            function exit() {
+                bootbox.confirm("Are you sure?", function(result) {
+                    if (result == true) {
+                   
+                       window.top.location.href  ="https://"+window.location.hostname+"/"+trialSiteId;
+                        //window.parent.open('about:blank','_self'); window.parent.close();
+                    }
+                });
+            }
+
+            /*
+             * go to next section
+             */
+            function next() {
+            
+                  //render html string to role section
+                    for (var i = 0; i < allRoles.length; i++) {
+                       
+                        if (allRoles[i].label == 'Principal Investigator') {
+                            if($('#tbody_role_'+allRoles[i].Id+" tr").length >0) {
+                                window.location.href = "SECFormTemplate?sectionId=" + (allSections[1].Id) + "&oid=" + oid + "&sectionName=" + allSections[1].label;
+                            } else {
+                                bootbox.alert('Please add a principal investigator');
+                              
+                            }
+                            return;
+                        }
+                    }
+                    
+                    
+              
+            }
+
+            /*
+            * if even add contacts to optional role object, then render all of them to optional role section
+            */
+            function initOptionalRoleSections() {
+                //get data from
+                var result = sforce.apex.execute("SECFormDemographics", "getOptionalRoleObjectList", {
+                    SECFormOpptyFormId : oid
+                });
+                result = JSON.parse(result);
+                //assemble Html string
+                var html = "";
+                html += '   <div class="row-fluid"> ' + ' <div class="span12">' + ' <div class="row-fluid" style="margin-top: 40px;">' + '     <div class="div1 span6" style="background-color: rgb(240,240,240);padding: 10px;">' + ' <h4> Optional Role</h4>' + ' <br />' + ' <select id="optional_role">'
+                for (var i = 0; i < result.length; i++) {
+                    var role = result[i];
+                    allRoles.push(role);
+                    html += "<option value=\'" + role.Id + "\'>" + role.label + "</option>";
+                }
+                html += '</select>' + ' <a class="btn" onclick="showContactsModal(\'optional\')"  ><i class="icon-plus">Add</i></a>' + ' <table class="table table-striped ">' + ' <tbody id="tbody_role_optional">' + '</tbody>' + '  </table>' + '  </div>';
+                html += ' </div>' + '</div>' + '</div>';
+                //render
+                $('#roles').append(html);
+
+                for (var i = 0; i < result.length; i++) {
+                    for (var j = 0; j < result[i].initContacts.length; j++) {
+                        renderContactToRoleSection(result[i].Id, result[i].initContacts[j]);
+                        allSelectedContactsInRoleSection.push(result[i].initContacts[j]);
+                    }
+
+                }
+
+            }
+
+            function toExportPDFPage() {
+                window.open("SECFormAsPDF?oid=" + oid, "_blank");
+            }
+
+            /*
+             * get current template status from server-side
+             * status:  readonly or editable
+             */
+            function currentTemplateCanEdit() {
+                var result = sforce.apex.execute("SECFormCommonUtils", "checkSECFormViewMode", {
+                    SECFormOpptyFormId : oid
+
+                });
+                result = JSON.parse(result);
+                switch(result) {
+                    case 'Readonly': {
+                        $('#tr_saving').hide();
+                        $('#tr_cancelWithoutSaving').hide();
+                        canEdit = false;
+                        break;
+                    }
+                    case 'Editable': {
+                        $('#tr_saving').show();
+                        $('#tr_cancelWithoutSaving').show();
+                        canEdit = true;
+                        break;
+                    }
+                    default:
+                        break;
+                }
+                //readonly
+                if (!canEdit) {
+                    $('#tr_saving').hide();
+                    $('#tr_cancelWithoutSaving').hide();
+                    $('#tr_submit').hide();
+                    $("#roles").find('i').hide();
+                    $("#roles").find('select').hide();
+                    $("#roles").find('a').hide();
+                    $('#readyonlytips').show();
+                    $('#bar_done').html("100%").attr('style', 'width:100%');
+                }
+            }
+
+            /**
+             * entrance
+             */
+            $(document).ready(function() {
+                    
+             
+          
+          
+                $modalEditAddress = $('#modal_edit_address');
+                $modalContactList = $('#myModal');
+
+                sforce.connection.sessionId = "{!$Api.Session_ID}";
+                oid = getParameterByName('oid');
+
+                initNecessaryRoleSections();
+                getTrialSiteId();
+                getTrialSiteName();
+                getTableOfContents();
+               initOptionalRoleSections();
+                currentTemplateCanEdit();
+                
+                
+
+
+                 $modalContactList.on('show', function() {
+                    $('#txt_searchcontact').val('');
+                    //set css dynamicly
+                  /*  $modalContactList.css({
+                       'margin-top' : function() {
+                            if ($(parent.document).scrollTop() - 800 > 0) {
+                                return $(parent.document).scrollTop() - 800;
+                            } else {
+                                return 10;
+                            }
+                         }
+                        
+                    });
+                    */
+                });
+
+                //bind modal show event
+                $modalEditAddress.on('show', function() {
+
+                    $modalEditAddress.find('#btn_modal_save').show();
+                    $modalEditAddress.find('#btn_modal_synchronize').hide();
+                     
+                    
+                 /*    $modalEditAddress.css({
+                        'margin-top' : function() {
+                            if ($(parent.document).scrollTop() - 800 > 0) {
+                                return $(parent.document).scrollTop() - 800;
+                            } else {
+                                return 10;
+                            }
+                        }
+                    });
+                */
+
+                  
+                   
+                });
+
+                $('#btn_menu').popover({
+                    title : 'Sections',
+                    content : $('#table_sections').html(),
+                    html : true
+
+                }).on('click', function() {
+                    $('#btn_options').popover('hide');
+                });
+
+                $('#btn_menu').on('shown.bs.popover', function() {
+
+                    $('.popover').on('mouseleave', function() {
+
+                        $('#btn_menu').popover('hide');
+                    });
+                });
+                $('#btn_options').on('shown.bs.popover', function() {
+                    $('.popover').on('mouseleave', function() {
+                        $('#btn_options').popover('hide');
+                    });
+                });
+                $('#btn_options').popover({
+                    title : 'Options',
+                    content : $('#table_options').html(),
+                    html : true
+                }).on('click', function() {
+                    $('#btn_menu').popover('hide');
+                });
+
+            });
+
+            function getParameterByName(name) {
+                name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+                var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+            }
+            
+            
+            function resizeIframe() {
+               var parentBody = window.parent.document.body;
+              
+              $("#iFrameId", parentBody).height( $("#iFrameId", parentBody).height()+50);
+               
+                
+            }
+           
+            
+          
+        </script>
+
+
+
+    </body>
+</html>
+</apex:page>

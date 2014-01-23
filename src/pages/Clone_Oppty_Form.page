@@ -1,0 +1,4 @@
+<apex:page standardcontroller="SEC_Forms_Oppty_Form__c"
+	extensions="OpptyFormExt" action="{!cloneForm}">
+	<apex:pageMessage summary="{!message}" severity="info" strength="3" />
+</apex:page>

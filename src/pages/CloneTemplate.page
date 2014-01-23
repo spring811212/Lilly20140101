@@ -1,0 +1,4 @@
+<apex:page controller="CloneTemplateController"
+	action="{!cloneTemplate}">
+
+</apex:page>

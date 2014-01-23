@@ -1,0 +1,996 @@
+<apex:page showHeader="false" standardStylesheets="false" applyHtmlTag="false" controller="SECFormTemplateController">
+<html>
+    <head>
+        <title>SEC</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
+        <!-- Bootstrap -->
+         <apex:stylesheet value="{!URLFOR($Resource.SECForm, 'css/bootstrap.min.css')}" />
+         <apex:stylesheet value="{!URLFOR($Resource.SECForm, 'css/font-awesome.min.css')}" />
+         <apex:stylesheet value="{!URLFOR($Resource.SECForm, 'css/datepicker.css')}" />
+         <apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/jquery.js') }" />
+         <apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/bootstrap.js') }" />
+         <apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/doT.min.js') }" />
+         <apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/bootbox.min.js') }" />
+         <apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/bootstrap-datepicker.js') }" />
+          <script src="/soap/ajax/15.0/connection.js" type="text/javascript"></script>
+           <script src="/soap/ajax/15.0/apex.js" type="text/javascript"></script>
+            <script>
+              //call salesforce webservice
+           
+sforce.Transport = function(url) {
+    this.url = url;
+    this.connection = null;
+
+    this.newConnection = function() {
+        try {
+            this.connection = new ActiveXObject('Msxml2.XMLHTTP');
+        } catch(e) {
+            try {
+                this.connection = new ActiveXObject('Microsoft.XMLHTTP');
+            } catch(e) {
+                this.connection = new XMLHttpRequest();
+            }
+        }
+
+        return this.connection;
+    };
+
+    this.send = function (envelope, callback, async, timeout) {
+        this.newConnection();
+        if (async) {
+            this.connection.onreadystatechange = this.httpConnectionCallback;
+        }
+        var holder = new sforce.internal.ConnectionHolder(this.connection, callback);
+        sforce.internal._connections.push(holder);
+        this.connection.open("POST", this.url, async);
+        this.connection.setRequestHeader("Content-Type", "text/xml; charset=UTF-8");
+        this.connection.setRequestHeader("SOAPAction", "\"\"");
+        this.connection.setRequestHeader("Accept", "text/xml");
+     //   this.connection.setRequestHeader("User-Agent", "SFAJAX 1.0");
+        this.connection.send(envelope);
+        if (async && typeof(timeout) !== "undefined") {
+            this.setTimeoutOn(holder, timeout);
+        }
+        if (!async) {
+            this.httpConnectionCallback();
+        }
+    };
+
+    this.setTimeoutOn = function (holder, timeout) {
+        function abortConnection() {
+            if (holder.connection.readyState !== 4) {
+                holder.timedout = true;
+                holder.connection.abort();
+            }
+        }
+        setTimeout(abortConnection, timeout);
+    };
+
+    this.httpConnectionCallback = function () {
+
+        for (var i = 0; i < sforce.internal._connections.length; i++) {
+            var holder = sforce.internal._connections[i];
+            if (holder !== null) {
+                if (holder.timedout) {
+                    sforce.internal._connections[i] = null;
+                    sforce.internal._connections.slice(i,1);
+                    holder.callback.httpCallback("Remote invocation timed out", false);
+                } else  if (holder.connection.readyState == 4) {
+                    sforce.internal._connections[i] = null;
+                    sforce.internal._connections.slice(i,1);
+                    var success = holder.connection.status == 200;
+                    if (sforce.debug.trace) {
+                        sforce.debug.log("Response : status - " + holder.connection.status);
+                        sforce.debug.logXml(holder.connection.responseText);
+                    }
+                    if (sforce.debug.apexTrace) {
+                        sforce.debug.logApex(holder.connection.responseText);
+                    }
+                    if (holder.connection.responseXML && holder.connection.responseXML.documentElement) {
+                        holder.callback.httpCallback(holder.connection.responseXML.documentElement, success);
+                    } else {
+                        holder.callback.httpCallback("Remote invocation failed, due to: " + holder.connection.responseText +
+                                                     " status code: ", holder.connection.status);
+                    }
+                }
+            }
+        }
+    };
+};
+</script>
+        <style>
+        .div1{
+            -moz-box-shadow: 1px 1px 5px #909090;
+            -webkit-box-shadow: 1px 1px 5px #909090;
+             box-shadow:1px 1px 5px #909090;
+        }
+        .divDisabled{
+            cursor: not-allowed;
+            background-color: rgb(221, 221, 221);
+            color: #9E9999;
+           
+        }
+        .redBg{
+              background-color: red;
+        }
+    h1, h2, h3, .masthead p, .subhead p, .marketing h2, .lead
+{
+  font-family: "Helvetica Neue", Helvetica, Arial, "Microsoft Yahei UI", "Microsoft YaHei", SimHei, "\5B8B\4F53", simsun, sans-serif;
+  font-weight: normal;
+}
+
+#scrollUp {
+  bottom: 20px;
+  right: 20px;
+  height: 38px;  /* Height of image */
+  width: 38px; /* Width of image */
+  background: url("img/top.png") no-repeat;
+}
+        body .modal {
+    /* new custom width */
+    width: 750px;
+    /* must be half of the width, minus scrollbar on the left (30px) */
+    margin-left: -375px;
+}
+
+.popover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1010;
+  display: none;
+  max-width: 600px;
+  padding: 1px;
+  text-align: left;
+  white-space: normal;
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  -webkit-border-radius: 6px;
+     -moz-border-radius: 6px;
+          border-radius: 6px;
+  -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+     -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  -webkit-background-clip: padding-box;
+     -moz-background-clip: padding;
+          background-clip: padding-box;
+}
+
+#toTop { 
+  background: url(http://blog.lixiphp.com/wp-content/themes/stardust/images/scrollup.png) no-repeat 0 0; 
+  bottom: 225px; 
+  display: block; 
+  height: 36px; 
+  opacity: 0.8; 
+  position: fixed; 
+  right: 240px; 
+  width: 36px; 
+} 
+#toTop:hover {  
+  opacity: 1;   
+}
+
+
+
+        </style>
+    </head>
+    <body>
+  
+    <div class="container-fluid" style="padding: 0px;margin-bottom: 100px;width: 100%;">
+
+    <div   id="page_main">
+
+        <div class="container-fluid" id="page_top">
+            <div class="row-fluid div1" style="background-color: rgb(240,240,240);padding-top:10px;">
+                <div class="span12">
+                    <div class="span3"  style="text-align: left;padding-left: 4px;">
+                        I-SEC /
+                        <span id="template_name"></span>
+                    </div>
+
+                    <div class="span3" >
+
+                        <div class="progress">
+                            <div class="bar"   id="bar_done"></div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="span6">
+                        <div style="text-align: right;margin-right: 10px;">
+
+                            <a class="btn btn btn-success "   id="btn_next"><i class="icon-arrow-right" onclick="next();">&nbsp; &nbsp; Next Section</i></a>
+                            <a class="btn "   data-toggle="popover" data-placement="bottom"  id="btn_menu" title="" data-original-title="" data-content="dadsadsa"><i class="icon-list">&nbsp;&nbsp;Table Of Contents </i></a>
+
+                            <a class="btn  "   data-toggle="popover" data-placement="bottom"  id="btn_options" title="" data-original-title="" data-content="dadsadsa"><i class="icon-cogs">&nbsp;&nbsp;Options</i></a>
+                            <a class="btn btn btn-danger  "  ><i class="icon-remove" onclick="exit();">&nbsp;&nbsp;Exit</i></a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+        <!-- / -->
+        <div style="text-align:center;font-size:16px;color:red;width:100%;margin-top:20px; display:none;" id="readyonlytips">“ReadOnly Mode !”</div>
+      
+        <div class="container-fluid " id="content">
+            
+        </div>
+        <!-- / -->
+
+        <!-- /container -->
+
+    </div>
+    <div  id="table_sections" style="display: none;">
+        <table class="table table-striped table-bordered" style="margin: 0px;padding: 0px;">
+
+            <tbody id="tbody_sections">
+
+            </tbody>
+        </table>
+    </div>
+
+    <div  id="table_options" style="display: none;">
+        <table class="table table-striped table-bordered" style="margin: 0px;padding: 0px;">
+
+            <tbody>
+
+                <tr  class="info"  id="tr_saving">
+
+                    <td ><a class="btn btn-link .btn-large" onclick="savingTemplate(true);"><i class="icon-save">&nbsp;&nbsp;Save Form</i></a></td>
+
+                </tr>
+                <tr  class="info" id="tr_cancelWithoutSaving">
+
+                    <td><a class="btn btn-link .btn-large" onclick="cacelWithoutSaving();"><i class="icon-trash">&nbsp;&nbsp;Cancel Form without Saving</i></a></td>
+
+                </tr>
+                <tr  class="info">
+
+                    <td><a class="btn btn-link .btn-large" onclick="toExportPDFPage();" ><i class="icon-file-alt">&nbsp;&nbsp;Export Form as PDF</i></a></td>
+
+                </tr>
+               
+                <tr  class="success" id="tr_submit">
+
+                    <td><a class="btn btn-link .btn-large" onclick="submitForm();"><i class="icon-ok">&nbsp;&nbsp;Submit Form for Approval</i></a></td>
+
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+
+
+</div>
+
+
+<script type="text/javascript">
+    
+    var oid,templateId,templateName;
+    var samelatestDisabledQuestions;
+    var allQuestions;
+    var allSections;
+    var canEdit;
+    /*
+    *get current template from server-side
+    *if success, render the assembled html string to current page.
+    */
+     function getTemplateById() {
+        var result = sforce.apex.execute("SECFormQuestionTemplate", "getQuestionsOfTemplate", {
+            questionTemplateId : templateId
+        });
+        result = JSON.parse(result);
+        //reset the array 
+        allQuestions = new Array();
+        var groups = result.groupList;
+        var html = "";
+        for (var i = 0; i < groups.length; i++) {
+            var group = groups[i];
+            var groupName = group.groupName;
+            var questions = group.questionList;
+            var fieldsetHtml = "<section class='div1'  style='margin-top: 20px;padding:10px;' > <div  class='page-header'><h1>" + groupName + "</h1></div>";
+            for (var j = 0; j < questions.length; j++) {
+                var question = questions[j];
+                allQuestions.push(question);
+                //questionType
+                switch(question.questionType) {
+                    case 'Short Text': {
+                        fieldsetHtml += renderShortText(question);
+
+                        break;
+                    }
+                    case 'Picklist': {
+                        fieldsetHtml += renderRadio(question);
+                        break;
+                    }
+                    case 'Checkbox': {
+                        fieldsetHtml += renderCheckbox(question);
+
+                        break;
+                    }
+                    case 'Date': {
+                        fieldsetHtml += renderDate(question);
+
+                        break;
+                    }
+                    case 'Comments': {
+                        fieldsetHtml += renderComments(question);
+
+                        break;
+                    }
+                    case 'Text block': {
+                        fieldsetHtml += renderTextBlock(question);
+
+                        break;
+                    }
+                    case 'Seperator': {
+                        fieldsetHtml += renderSeperator(question);
+
+                        break;
+                    }
+                    case 'Sub-Section Question': {
+                        fieldsetHtml += renderShortText(question);
+
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
+
+            html += fieldsetHtml;
+            html += "</section>";
+        }
+
+        $('#content').html(html);
+
+    } 
+    
+    
+    /**
+     *if the question has decision tree, disabled all connected element.
+     */
+     function disableAll(questionId) {
+       
+        var optionId= $('#question_'+questionId).find('select').val();//get selected optionId
+
+        for (var i = 0; i < allQuestions.length; i++) {
+            var question = allQuestions[i];
+            //if has no options
+            if (questionId == question.questionId && question.optionList != null) {
+                    //render options
+                for (var j = 0; j < question.optionList.length; j++) {
+                    var option = question.optionList[j];
+
+                    $(".question_disabled_" + question.questionId).removeClass('divDisabled').removeClass(".question_disabled_" + question.questionId);
+                    $(".question_disabled_" + question.questionId).find('input').removeAttr('disabled');
+                    $(".question_disabled_" + question.questionId).find('select').removeAttr('disabled');
+                    if (option.optionId == optionId && option.disableRule != null) {
+
+                        for (var k = 0; k < option.disableRule.length; k++) {
+
+                            $('#question_' + option.disableRule[k]).addClass("divDisabled").addClass("question_disabled_" + question.questionId);
+                            $('#question_' + option.disableRule[k]).find('input').attr('disabled', 'disabeld');
+                             $('#question_' + option.disableRule[k]).find('select').attr('disabled', 'disabeld');
+                        }
+                        return;
+
+                    }
+                }
+            }
+        }
+
+    }
+
+    /**
+     * render seperator question
+     */
+    function renderSeperator(question) {
+        var html = "<hr/>";
+
+        return html;
+    }
+
+    /**
+     * render textblock question
+     */
+    function renderTextBlock(question) {
+        var html = "";
+        var preText = "";
+        var required = "";
+        if (question.questionRequired) {
+            preText = "(must)";
+            required = "required";
+        }
+        html += "<div  id=\'question_" + question.questionId + "\'  class=\'question " + required + "\'><span style='font-size:16px;'>" + question.questionText + preText + "</span><pre style='margin-top:20px;'>";
+        html += ' ';
+        html += "</pre></div>";
+        return html;
+    }
+
+    /**
+     * render comment question
+     */
+    function renderComments(question) {
+        var html = "";
+        var preText = "";
+        var required = "";
+        if (question.questionRequired) {
+            preText = "(must)";
+            required = "required";
+        }
+        html += "<div  id=\'question_" + question.questionId + "\' class=\'question " + required + "\'><span style='font-size:16px;'>" + question.questionText + preText + "</span><pre style='margin-top:20px;'>";
+        html += '<textarea  class="textarea" rows="3" cols="100" value=\"' + question.answer + '\" id=\"option_' + question.questionId + '\">' + question.answer + '</textarea> ';
+        html += "</pre></div>";
+        return html;
+    }
+
+    /**
+     * render date question
+     */
+    function renderDate(question) {
+        var html = "";
+        var preText = "";
+        var required = "";
+        //if this question is required
+        if (question.questionRequired) {
+            preText = "(must)";
+            required = "required";
+        }
+        html += "<div  id=\'question_" + question.questionId + "\'  class=\'question " + required + "\'><span style='font-size:16px;'>" + question.questionText + preText + "</span><pre style='margin-top:20px;'>";
+        html += '<input type="text" class="data-date" data-date-format="mm/dd/yy" value=\"' + question.answer + '\"  id=\"option_' + question.questionId + '\" >';
+        html += "</pre></div>";
+        return html;
+    }
+    
+    /**
+     * render radio question
+     */
+    function renderRadio(question) {
+        var html = "";
+        var preText = "";
+        var required = "";
+        if (question.questionRequired) {
+            preText = "(must)";
+            required = "required";
+        }
+        html += "<div  id=\'question_" + question.questionId + "\'  class=\'question " + required + "\'><span style='font-size:16px;'>" + question.questionText + preText + "</span><pre class='prettyprint' style='margin-top:20px;'>";
+        html += '<select onchange=\'disableAll(\"' + question.questionId + '\")\' >';
+      
+        if(question.answer == null || question.answer.length==0 || question.answer=='Please select...'){
+          html+=' <option>Please select...</option>';
+        }
+        //render options
+        if (question.optionList && question.optionList.length>0) {
+            for (var i = 0; i < question.optionList.length; i++) {
+                var option = question.optionList[i];
+                var checked = "";
+                if (question.answer == option.optionText) {
+                    checked = "selected";
+                }
+                html+= '<option value=\''+option.optionId+'\'  '+checked+'>' + option.optionText + '</option>';
+            }
+        }
+        html += "</select></pre></div>";
+        return html;
+    }
+
+    /**
+     * render checkbox
+     */
+    function renderCheckbox(question) {
+        var html = "";
+        var preText = "";
+        var required = "";
+        if (question.questionRequired) {
+            preText = "(must)";
+            required = "required";
+        }
+        var checked = "";
+        if (question.answer == "true") {
+            checked = "checked";
+        }
+
+        html += "<div  id=\'question_" + question.questionId + "\' class=\'question " + required + "\'><span style='font-size:16px;'><label class='checkbox'><input type='checkbox' id=\'option_" + question.questionId + "\'         " + checked + " >   " + question.questionText + preText + "</input></label></span>";
+        html += "</div>";
+        return html;
+    }
+
+    /**
+     * render short text
+     */
+    function renderShortText(question) {
+        var html = "";
+        var preText = "";
+        var required = "";
+        if (question.questionRequired) {
+            preText = "(must)";
+            required = "required";
+        }
+        html += "<div  id=\'question_" + question.questionId + "\' class=\'question " + required + "\' ><span style='font-size:16px;'>" + question.questionText + preText + "</span><pre style='margin-top:20px;'>";
+        html += '<input type="text" style="width:80%"  id=\"option_' + question.questionId + '\" value=\"' + question.answer + '\"></input>';
+        html += "</pre></div>";
+        return html;
+    }
+      
+    //initialize table of contents
+    function getTableOfContents() {
+
+      
+        var result = sforce.apex.execute("SECFormQuestionTemplate", "getTableOfContents", {
+            SECFormOpptyFormId : oid,
+            questionTemplateId : templateId
+        });
+        result = JSON.parse(result);
+
+        var html = "";
+        allSections = new Array();
+        var doneCount = 0;
+        //judge current template is the last one
+        if (result[result.length - 1].Id == templateId) {
+            $('#btn_next').hide();
+        }
+        for (var i = 0; i < result.length; i++) {
+            var section = result[i];
+            allSections.push(section);
+        
+            var id = section.Id;
+
+            var label = section.Label;
+            var status;
+                switch(section.Status){
+                    case 'Completed':{
+                        status="icon-ok";
+                        doneCount+=1;
+                        break;
+                    }
+                    case 'Current':{
+                        status="icon-hand-right";
+                        break;
+                    }
+                    default:{
+                        status="icon-warning-sign";
+                    }
+        
+                }
+
+             html += '<tr class="warning">' + '<td style="vertical-align:center;"><i class=\"'+status+'\"></i></td><td  style="vertical-align:left; text-align:left;"><a style="cursor:pointer;" onclick="toTemplatePage(\'' + id + '\',\'' + label + '\');" >' + (i + 1) + '.' + label + '&nbsp;&nbsp;</a></td>' + '</tr>';
+        }
+        //display the process status
+        var width = Math.floor(100 * doneCount / result.length) + "%";
+        $('#bar_done').html(width).attr('style', 'width:' + width);
+        $('#tbody_sections').html(html);
+    }
+
+    //go to other template page
+    function toTemplatePage(sectionId, sectionName) {
+        if (sectionId == 1) {
+            window.location.href = "SECFormDemographics?oid=" + oid;
+        } else {
+            window.location.href = "SECFormTemplate?sectionId=" + sectionId + "&oid=" + oid + "&sectionName=" + sectionName;
+        }
+    }
+
+    function exit() {
+        bootbox.confirm("Are you sure?", function(result) {
+            if (result == true) {
+                window.top.location.href  ="https://"+window.location.hostname+"/"+     getTrialSiteId();
+            }
+        });
+    }
+     function getTrialSiteId() {
+                var result = sforce.apex.execute("SECFormQuestionTemplate", "getTrialSiteId", {
+                    SECFormOpptyFormId : oid
+                });
+
+                return JSON.parse(result).trialSitedId;
+
+   }
+    //click next button
+    function next() {
+        var canNext=false;
+        if(canEdit){
+            if (savingTemplate(false) ) {
+               canNext=true;
+            }
+        }else{
+            canNext=true;
+        }
+        //if can go to next template
+        if(canNext){
+             for (var i = 0; i < allSections.length; i++) {
+                    var section = allSections[i];
+                    if (section.Id == templateId) {
+                        if (i + 1 < allSections.length) {
+                            var newxtsection = allSections[i + 1];
+                            window.location.href = "SECFormTemplate?sectionId=" + (newxtsection.Id) + "&oid=" + oid + "&sectionName=" + newxtsection.Label;
+                        }
+                    }
+               }
+       }
+
+    }
+    function cacelWithoutSaving(){
+         bootbox.confirm("Are you sure?", function(result) {
+            if (result == true) {
+               
+                window.location.href = "SECFormStartEvaluation?" + location.search;
+             
+            }
+        });
+    }
+    /**
+     * answer object
+     */
+    function Answer(id,answer_c,required_c){
+        this.Id=id;
+        this.Answer__c=answer_c;
+        this.Required__c=required_c;
+    }
+    
+    /*
+     * save current template
+     *
+     */
+    function savingTemplate(showAlert){
+    var questionAnswer=new Array();
+    var canSave=true;
+    //get all question in current template
+    var hasAnswerQuestions=$(".question");
+    for(var i=0;i<hasAnswerQuestions.length;i++){
+      var questionDiv=hasAnswerQuestions[i];
+        var type;
+        //get question type
+      if($(questionDiv).find('textarea').length>0){
+          type="textarea";
+      }else{
+           type=$(questionDiv).find('input').attr('type');
+      }
+      if($(questionDiv).find('select').length >0 ){
+          type="radio";
+      }
+      //if question is required
+       var required=$(questionDiv).hasClass('required');
+       //get question id
+       var questionId=$(questionDiv).attr("id").split("_")[1];
+     
+        switch(type){
+                    case 'textarea':{
+                            var value=$(questionDiv).find('textarea').val();
+                            
+                            if(required  &&  value.length==0){
+                                canSave=false;
+                                //has errors
+                                $(questionDiv).addClass('redBg');
+                              
+                             }else{
+                                //no error
+                                  $(questionDiv).removeClass('redBg');
+                             }
+                             
+                             var answer=new Answer(questionId,value,required);
+                             questionAnswer.push(answer);
+                             break;
+                    
+                    }
+                   
+                    case 'text' :{
+                   
+                   
+                            var value=$(questionDiv).find('input').val();
+                            if(required  &&  value.length==0){
+                                canSave=false;
+                                   //has errors
+                                $(questionDiv).addClass('redBg');
+                              
+                             }else{
+                                    //no error
+                                  $(questionDiv).removeClass('redBg');
+                             }
+                             
+                             var answer=new Answer(questionId,value,required);
+                             questionAnswer.push(answer);
+                           
+                                break;
+                    }
+                     case 'checkbox':{
+                  
+                    var checked=$(questionDiv).find('input').is(":checked");
+                       
+                          if(required && !checked){
+                               //has errors
+                           $(questionDiv).addClass('redBg');
+                          }else{
+                                //no error
+                            $(questionDiv).removeClass('redBg');
+                          }
+                          
+                           var answer=new Answer(questionId,checked,required);
+                             questionAnswer.push(answer);
+                                break;
+                          
+                          
+                     }
+                     case 'radio':{
+                    
+                       var value=$(questionDiv).find("select").children('option:selected').text();  
+                       //reset the value
+                        if(value=='Please select...'){
+                            value="";
+                        }
+
+                       if(required && (value==undefined || value.length==0 )){
+                               //has errors
+                           $(questionDiv).addClass('redBg');
+                          }else{
+                                //no error
+                            $(questionDiv).removeClass('redBg');
+                          }
+                       
+                           var answer=new Answer(questionId,value,required);
+                             questionAnswer.push(answer);
+                                break;
+                     
+                     }
+                     
+                    default:break;
+           }
+      
+       
+       
+       
+    }
+     
+      if($(".redBg").length == 0){
+        //there is no error
+      
+            
+              var result = sforce.apex.execute("SECFormQuestionTemplate", "saveAnswers", {
+                        SECFormOpptyFormId : oid,
+                        questionTemplateId : templateId,
+                        questionAnswer : JSON.stringify(questionAnswer)
+                        
+                });
+             result=JSON.parse(result)
+              $('#btn_options').popover('hide');
+              if(showAlert){
+                  bootbox.alert(result.Msg);
+              }
+              return true;
+                
+       }else{
+       //has errors
+               return false;
+       }
+    
+    
+    }
+    
+     function toExportPDFPage(){
+          window.open("SECFormAsPDF?oid="+oid,"_blank");
+    }
+    
+    /*
+    * 1.commit current form for approval
+    * 2.display all template status
+    * 3.calculate the  percent of the process
+    */
+    function submitForm(){
+    
+      if( savingTemplate(false)){
+      //firstly, save successfully
+      //secondly, call webservice
+             var result = sforce.apex.execute("SECFormQuestionTemplate", "submitForm", {
+                        SECFormOpptyFormId : oid
+                      
+                        
+                });
+               ;
+             result=JSON.parse(result);
+             if(result.Success == '2'){
+                 bootbox.alert( 'You already have one form under approval process!');
+                 return;
+             }else if(result.Success == '3'){
+                 bootbox.alert( "All the SEC subforms must be approved before submitting the 'Site Evaluation' form!");
+                 return;
+
+             }else if(result.Success =='4' ){
+                 bootbox.alert( "The site is Selected, only PI Change and Location Change forms can be submitted!");
+                 return;
+
+            } else{
+                 result=JSON.parse(result.Msg);
+             }
+          
+             var doneCount=0;
+             var html='<div style="margin-top:40px;text-align:center;width:100%;"><table  align="center">';
+             for(var i=0;i<result.length;i++){
+                 switch(result[i].Status){
+                     case 'Completed':{
+                     doneCount+=1;
+                     html+='<tr>';
+                     html+=' <td><i class="icon-ok success">&nbsp;&nbsp;&nbsp;&nbsp; </i></td><td class="text-left text-success">&nbsp;&nbsp;&nbsp;&nbsp; '+result[i].Label+'</td>';
+                     html+='</tr>';
+                     break;
+                     }
+                     default:{
+                      html+='<tr>';
+                         html+='<td><i class="icon-warning-sign"> &nbsp;&nbsp;&nbsp;&nbsp; </i></td> <td class="text-left text-warning">&nbsp;&nbsp;&nbsp;&nbsp; '+result[i].Label+'</td>';
+                      html+='</tr>';
+                     break;
+                     }
+                 }
+             } 
+             html+="</table></div>";
+            
+             $('#readyonlytips').hide();
+             $("#content").html(html);
+             $('#btn_options').popover('hide');
+             $('#btn_next').hide();
+             
+            //display the process bar after 0.5s delay
+            
+             setTimeout(function(){
+           
+                 var width = Math.floor(100 * (doneCount / result.length))+"%" ;
+                 
+                 $('#bar_done').html(width).attr('style', 'width:' + width);
+          
+             },500);
+              
+             
+             //reload table of content
+             html="";
+           
+           for (var i = 0; i < result.length; i++) {
+            var section = result[i];
+            var id = section.Id;
+            var label = section.Label;
+            var status;
+                switch(section.Status){
+                    case 'Completed':{
+                        status="icon-ok";
+                        
+                        break;
+                    }
+                    case 'Current':{
+                        status="icon-hand-right";
+                        break;
+                    }
+                    default:{
+                        status="icon-warning-sign";
+                    }
+                }
+
+             html += '<tr class="warning">' + '<td style="vertical-align:center;"><i class=\"'+status+'\"></i></td><td  style="vertical-align:left; text-align:left;"><a style="cursor:pointer;" onclick="toTemplatePage(\'' + id + '\',\'' + label + '\');" >' + (i + 1) + '.' + label + '&nbsp;&nbsp;</a></td>' + '</tr>';
+            }
+
+            
+             
+             
+            //refresh table of content
+             var myPopover = $('#btn_menu').data('popover');
+             myPopover.options.content = html;
+          
+          
+       }
+         
+    }
+    //decide this template is editable
+    function currentTemplateCanEdit(){
+           var result = sforce.apex.execute("SECFormCommonUtils", "checkSECFormViewMode", {
+                        SECFormOpptyFormId : oid
+                      
+                        
+                });
+             result=JSON.parse(result);
+             
+             switch(result){
+                 case 'Readonly':
+                 {
+                      $('#tr_saving').hide();
+                      $('#tr_cancelWithoutSaving').hide();
+                      canEdit=false;
+                      break;
+                 }
+                 case 'Editable':
+                 {
+                      $('#tr_saving').show();
+                      $('#tr_cancelWithoutSaving').show();
+                      canEdit=true;
+                      break;
+                 }
+                 default:break;
+             }
+             
+             if(!canEdit){
+                  $('#tr_submit').hide();
+                  $('input').attr('disabled',"disabled");
+                  $('select').attr('disabled',"disabled");
+                  $('textarea').attr('disabled',"disabled");
+                  $('#readyonlytips').show();
+                  $('#bar_done').html("100%").attr('style', 'width:100%');
+             } 
+           
+    }
+    
+    
+    $(document).ready(function() {
+       
+       
+      
+       
+        sforce.connection.sessionId = "{!$Api.Session_ID}";//get session id
+        oid=getParameterByName('oid');
+        templateId=getParameterByName('sectionId');//get setionId
+        templateName=getParameterByName('sectionName');//get sectionName
+         if(templateName==undefined){
+             templateName="Empty Name";
+         }
+         $('#template_name').text(templateName);
+        
+        getTemplateById();
+        getTableOfContents();
+        currentTemplateCanEdit();
+        //bind popover event on menu button
+        $('#btn_menu').popover({
+            title : 'Sections',
+            content:$('#table_sections').html(),
+            html : true
+
+        }).on('click',function(){
+      
+             $('#btn_options').popover('hide');
+        });
+        //bind show event on menu button
+        $('#btn_menu').on('shown.bs.popover',function(){
+                 
+              $('.popover').on('mouseleave',function(){
+            
+                $('#btn_menu').popover('hide');
+              });
+        });
+        
+        
+        //bind popover event on options button
+         $('#btn_options').popover({
+            title : 'Options',
+            content : $('#table_options').html(),
+            html : true
+
+        }).on('click',function(){
+             $('#btn_menu').popover('hide');
+        });
+           //bind show event on options button
+        $('#btn_options').on('shown.bs.popover',function(){
+             $('.popover').on('mouseleave',function(){
+                    $('#btn_options').popover('hide');
+              });
+        });
+        
+        
+          $('.data-date').datepicker();
+       
+    });
+
+    function getParameterByName(name) {
+        name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+            results = regex.exec(location.search);
+        return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+    
+
+ 
+
+</script>
+
+
+    </body>
+</html>
+</apex:page>

@@ -1,0 +1,22 @@
+<apex:page controller="CreateFormController">
+	<apex:form >
+		<apex:pageBlock title="Error" rendered="{!hideForm}">
+			<apex:pageMessage summary="{!errMsg}" severity="error" strength="3" />
+		</apex:pageBlock>
+		<apex:pageBlock title="Copy Answers" mode="edit"
+			rendered="{!NOT(hideForm)}">
+			<apex:pageMessage summary="{!errMsg}" severity="warning" strength="3"
+				rendered="{!missingSource}" />
+			<apex:outputLabel value="Copy Answers From Existing SEC Form"
+				for="sourceForm" />
+			<apex:inputField id="sourceForm" value="{!opptyForm.Source_Form__c}"
+				rendered="{!NOT(restrictForm)}" />
+			<br />
+			<br />
+			<apex:commandButton action="{!goToForm}"
+				value="{!IF(restrictForm, 'Continue','Create Form w/o Copying Answers')}" />&nbsp;
+		<apex:commandButton action="{!goToCopyAnswers}" value="Copy Answers"
+				rendered="{!NOT(restrictForm)}" />
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

@@ -1,0 +1,39 @@
+<apex:page standardController="Opportunity" extensions="TrialOpptyForms_Extension">
+<apex:outputText value="{!opportunity.CampaignId}" rendered="false"/>
+<apex:outputText value="{!opportunity.Probability}" rendered="false"/>
+<apex:outputText value="{!opportunity.Form_Stage_Evaluator__c}" rendered="false"/>
+<apex:outputText value="{!opportunity.OwnerId}" rendered="false"/>
+<apex:outputText value="{!opportunity.StageName}" rendered="false"/>
+<apex:outputText value="{!opportunity.Display_Forms_Flag__c}" rendered="false"/>
+<apex:outputText value="{!opportunity.Display_Location_Change__c}" rendered="false"/>
+
+<apex:pageBlock >
+<apex:pageBlockSection columns="1" >
+	<apex:pageBlockTable value="{!links}" var="link" rendered="{!NOT(ISNULL(links))}">
+	            <apex:column headerValue="Action">
+	            	<apex:outputLink target="_blank" value="{!link.formLink}">{!link.formLinkText}</apex:outputLink>
+	            </apex:column>
+	            <apex:column headerValue="Form Name">
+	            	<apex:outputLink target="_blank" value="/{!link.formId}">{!link.formName}</apex:outputLink>
+	            </apex:column>
+	            <apex:column headerValue="Oppty Form Name">
+	            	<apex:outputLink target="_blank" value="/{!link.opptyFormId}">{!link.formName}</apex:outputLink>
+	            </apex:column>
+	            <apex:column headerValue="Form Type">
+	            	<apex:outputText value="{!link.formType}"></apex:outputText>
+	            </apex:column>
+				<apex:column headerValue="Status">
+					<apex:outputText style="{!link.cssStyle}" value="{!link.Status}"></apex:outputText>
+				</apex:column>
+				<apex:column headerValue="Submit Date">
+					<apex:outputText value="{!link.submittedDateText}"></apex:outputText>
+				</apex:column>
+				<apex:column headerValue="Create Date">
+					<apex:outputText value="{!link.createdDateText}"></apex:outputText>
+				</apex:column>
+	</apex:pageBlockTable>
+
+</apex:pageBlockSection>
+</apex:pageBlock>
+<apex:includeScript value="{!URLFOR($Resource.SECForm, 'js/jquery.js') }" />
+</apex:page>
